@@ -1,4 +1,4 @@
-@(title: String, jobs: Array[RunningJob])
+@(title: String, jobs: Seq[RunningJob])
 
 <!DOCTYPE html>
 
@@ -23,7 +23,7 @@
 	<span class="cell">Child PID</span>
       </div>
       @for(job <- jobs) {
-		    <div class="row">
+		    <div class="row" id="@job.getPointID">
 		      <input type="radio" name="expand">
 		      <span class="cell primary" data-label="Point ID"><a id="@job.getPointID" class="point_select" href=".">@job.getPointID</a></span>
 		      <span class="cell" data-label="Current Tool">@job.getCurrentTool</span>
