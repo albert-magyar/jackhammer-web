@@ -44,6 +44,7 @@ class CPPRunningJob(pointID: Int, childPID: Int, startTime: java.sql.Date, metri
   def getElapsedTime: String = {
     (((new java.util.Date()).getTime() - startTime.getTime()) / 1000).toString
   }
+  def getTuple:Tuple4[Int,Int,java.sql.Date,Double] = (getPointID,getChildPID,
 }  
 
 trait Parent {
@@ -69,45 +70,54 @@ class DBParent(name: String) extends Parent {
   val points: TableQuery[DSELang.Points] = TableQuery[DSELang.Points]
   val cpp: TableQuery[DSELang.Cpp_TC] = TableQuery[DSELang.Cpp_TC]
 
-  val url = "jdbc:h2:mem:" + name + ";DB_CLOSE_DELAY=-1"
+  val url = "jdbc:mysql://localhost:3306/" + name
 
-  // Create a connection (called a "session") to an in-memory H2 database
-  val db = Database.forURL(url, driver = "org.h2.Driver")
+  // Create a connection (called a "session") to a persistent mysql database
+  val db = Database.forURL(url, driver="com.mysql.jdbc.Driver", user="root", password="workingonourproject")
   db.withSession { implicit session =>
 
     // Create the schema by combining the DDLs for the Suppliers and Coffees
     // tables using the query interfaces
-    (parameters.ddl ++ points.ddl ++ cpp.ddl).create
-    //(points.ddl ++ cpp.ddl).create
-    //(parameters.ddl ++ points.ddl).create
+    var ddls = List[slick.driver.MySQLDriver.DDL]()
+    var allExist = true
+    if (MTable.getTables("POINTS").list.isEmpty)     { ddls = ddls ++ List(points.ddl); allExist = false }
+    if (MTable.getTables("PARAMETERS").list.isEmpty) { ddls = ddls ++ List(parameters.ddl); allExist = false }
+    if (MTable.getTables("CPP_TC").list.isEmpty)     { ddls = ddls ++ List(cpp.ddl); allExist = false }
+    if (!allExist) { ddls.reduce(_ ++ _).create }
+  }
 
+  def createChild() = {
+    db.withSession { implicit session =>
+      // Add to points
+      val pols = points.list.map( x => x._1).sorted
+      val point_id:Int = if(pols.isEmpty) 0 else pols.last + 1
+      val project  = "PA6"
+      val f_space  = 0
+      val src_ver  = "-"
+      val dsgn_cf  = 0
+      points += (point_id,project,f_space,src_ver,dsgn_cf)
 
-    /* Create / Insert */
+      // Add to parameters
+      val pals  = parameters.list.map( x => x._3).sorted
+      val p = if(pals.isEmpty) 0 else pals.last
+      val a_val = p + (new scala.util.Random).nextInt(2)
+      val b_val = p + (new scala.util.Random).nextInt(2)
+      val c_val = p + (new scala.util.Random).nextInt(2)
+      parameters += ((point_id, "A", a_val))
+      parameters += ((point_id, "B", b_val))
+      parameters += ((point_id, "C", c_val))
+      
 
-    // Insert some parameters
-    points += (0, "PA6", -1, "v0.0.0", -1)
-    points += (1, "PA6", -1, "v0.0.0", -2)
-    val allPoints: List[(Int, String, Int, String, Int)] = points.list
-    allPoints.map( x => println(x))
-
-    parameters ++= Seq (
-      (0, "A", "a0"),
-      (0, "B", "b0"),
-      (0, "C", "c0"),
-      (1, "A", "a1"),
-      (1, "B", "b1"),
-      (1, "C", "c1")
-    )
-    val allParameters: List[(Int, String, String)] = parameters.list
-    allParameters.map( x => println(x))
-
-    val time = new java.util.Date()
-
-    cpp += (0, 0, new java.sql.Date(time.getTime()), 0.0)
-    cpp += (1, 1, new java.sql.Date(time.getTime()), 0.1)
-
-    val allCPP = cpp.list
-    allCPP.map( x => println(x))
+      val jols = cpp.list.map( x => x._2).sorted
+      val job_id:Int    = if(jols.isEmpty) 0 else jols.last + 1
+      val time = new java.util.Date()
+      val date          = new java.sql.Date(time.getTime())
+      var metric:Double = 0.0
+      cpp += ((point_id,job_id,date,metric))
+      Thread sleep 1000
+      val q = for { c <- cpp if c.POINT_ID === point_id } yield c.METRIC
+      q.update((new scala.util.Random).nextInt(200)*0.5)
+    }
   }
 
   def getRunningJobs: Seq[RunningJob] = {
@@ -130,7 +140,11 @@ object Application extends Controller {
          	  	      	                      "childPID" -> Json.toJson(o.getChildPID)))
   }
 
-  val parent = new DBParent("test")
+  val parent = new DBParent("watwat")
+  parent.createChild()
+  parent.createChild()
+  parent.createChild()
+  parent.createChild()
 
   def index = Action {
     Ok(views.html.index("JackHammer Control Panel.", parent.getRunningJobs))
@@ -140,5 +154,4 @@ object Application extends Controller {
     val jsonReply = Json.toJson(parent.getRunningJobs.toSeq)
     Ok(jsonReply)
   }
-
 }
