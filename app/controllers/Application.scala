@@ -154,4 +154,10 @@ object Application extends Controller {
     val jsonReply = Json.toJson(parent.getRunningJobs.toSeq)
     Ok(jsonReply)
   }
+
+  def createChild = Action {
+    Ok
+  }
+
 }
+
