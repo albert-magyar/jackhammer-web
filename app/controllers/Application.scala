@@ -141,4 +141,8 @@ object Application extends Controller {
     Ok(jsonReply)
   }
 
+  def createChild = Action {
+    Ok
+  }
+
 }
