@@ -4,6 +4,7 @@ import play.api._
 import play.api.mvc._
 import play.api.libs.json._
 import scala.slick.driver.MySQLDriver.simple._
+import scala.slick.jdbc.meta.MTable
 
 trait RunningJob {
   def getPointID: String
@@ -44,7 +45,6 @@ class CPPRunningJob(pointID: Int, childPID: Int, startTime: java.sql.Date, metri
   def getElapsedTime: String = {
     (((new java.util.Date()).getTime() - startTime.getTime()) / 1000).toString
   }
-  def getTuple:Tuple4[Int,Int,java.sql.Date,Double] = (getPointID,getChildPID,
 }  
 
 trait Parent {
