@@ -59,6 +59,8 @@ object Application extends Controller {
 
   val parent = new MockParent
 
+  val test = DSELang.HelloDSE.test
+
   def index = Action {
     Ok(views.html.index("JackHammer Control Panel.", parent.getRunningJobs))
   }

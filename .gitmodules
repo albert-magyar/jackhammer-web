@@ -1,0 +1,3 @@
+[submodule "dse-lang"]
+	path = dse-lang
+	url = https://bitbucket.org/azidar/dse-lang
