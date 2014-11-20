@@ -32,10 +32,9 @@ class MockRunningJob extends RunningJob {
   }
 }
 
-class CPPRunningJob(pointID: Int, childPID: Int, startTime: java.sql.Date, metric: Double) extends RunningJob {
+class CPPRunningJob(pointID: Int, childPID: Int, nodeID: String, startTime: java.sql.Timestamp, metric: Double) extends RunningJob {
   var rand = new scala.util.Random
   val currentTool = "CPP"
-  val nodeID = (Array.fill(4){rand.nextInt(256)}).mkString(".")
 
   def getPointID: String = { pointID.toString }
   def getCurrentTool: String = { "CPP" }
@@ -111,9 +110,10 @@ class DBParent(name: String) extends Parent {
       val jols = cpp.list.map( x => x._2).sorted
       val job_id:Int    = if(jols.isEmpty) 0 else jols.last + 1
       val time = new java.util.Date()
-      val date          = new java.sql.Date(time.getTime())
+      val date          = new java.sql.Timestamp(time.getTime())
       var metric:Double = 0.0
-      cpp += ((point_id,job_id,date,metric))
+      var node_id = "ClusterNode" + (new scala.util.Random).nextInt(32).toString
+      cpp += ((point_id,job_id,node_id,date,metric))
       Thread sleep 1000
       val q = for { c <- cpp if c.POINT_ID === point_id } yield c.METRIC
       q.update((new scala.util.Random).nextInt(200)*0.5)
@@ -124,7 +124,7 @@ class DBParent(name: String) extends Parent {
     val jobs = Seq.newBuilder[RunningJob]
     db.withSession { implicit session =>
       val allCPP = cpp.list
-      allCPP.map( x => jobs += new CPPRunningJob(x._1, x._2, x._3, x._4))
+      allCPP.map( x => jobs += new CPPRunningJob(x._1, x._2, x._3, x._4, x._5))
     }
     jobs.result
   }
@@ -156,6 +156,7 @@ object Application extends Controller {
   }
 
   def createChild = Action {
+    parent.createChild()
     Ok
   }
 

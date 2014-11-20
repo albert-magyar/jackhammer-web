@@ -6,7 +6,7 @@
 	    success: function(data) {
 		console.log("AJAX Success");
 		$("#job_table .row").not(".header-row").remove();
-		dataByPointID = _.sortBy(data, function(point){ return point.pointID; });
+		dataByPointID = _.sortBy(data, function(point){ return parseInt(point.pointID); });
 		_.map(dataByPointID, function(point){
 			var $div = $("<div>").addClass("row").attr("id",point.pointID);
 			$div.append($("<span>").addClass("cell").attr("data-label","Point ID").text(point.pointID));
